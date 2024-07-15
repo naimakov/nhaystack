@@ -10,9 +10,11 @@
 //
 package nhaystack.util;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 import javax.baja.control.BEnumWritable;
+import javax.baja.control.util.BEnumOverride;
 import javax.baja.data.BIDataValue;
 import javax.baja.history.BHistoryConfig;
 import javax.baja.history.BIHistory;
@@ -225,6 +227,46 @@ public abstract class TypeUtil
             }
 
             return simple;
+        }
+        else if (def instanceof BEnumOverride)
+        {
+            BEnumOverride cpx = (BEnumOverride) def;
+            BFacets facets = comp.getAction(action.getName()).getFacets();
+            BEnumRange range = (BEnumRange) facets.get(BFacets.RANGE);
+
+            Iterator<Map.Entry<String, HVal>> it = args.iterator();
+            while (it.hasNext())
+            {
+                Map.Entry<String, HVal> e = it.next();
+                BSimple value = toBajaSimple(e.getValue());
+                if (!e.getKey().equals("value"))
+                {
+                    cpx.set(e.getKey(), value);
+                    continue;
+                }
+                // construction of BDynamicEnum arg
+                if (value instanceof BString && range.isTag(value.toString()))
+                {
+                    value = range.get(value.toString());
+                }
+                else if (value instanceof BDouble && range.isOrdinal(((BDouble) value).getInt()))
+                {
+                    value = range.get(((BDouble) value).getInt());
+                }
+                else
+                {
+                    try {
+                        throw new IllegalStateException(
+                            "value: " + value.toString() +
+                                " is not ordinal nor tag of " + range.encodeToString());
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
+
+                cpx.set("value", value);
+            }
+            return cpx;
         }
         // complex
         else
