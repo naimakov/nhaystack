@@ -232,7 +232,14 @@ public abstract class TypeUtil
         {
             BEnumOverride cpx = (BEnumOverride) def;
             BFacets facets = comp.getAction(action.getName()).getFacets();
-            BEnumRange range = (BEnumRange) facets.get(BFacets.RANGE);
+            if (facets.isNull()) throw new NullPointerException(
+                "comp " + comp + " does not have facets that are needed for action " + action.getName());
+            BEnumRange range;
+            try {
+                range = (BEnumRange) facets.get(BFacets.RANGE);
+            } catch (ClassCastException e) {
+                throw new ClassCastException("facets of comp " + comp + " must be of type " + BEnumRange.TYPE);
+            }
 
             Iterator<Map.Entry<String, HVal>> it = args.iterator();
             while (it.hasNext())
