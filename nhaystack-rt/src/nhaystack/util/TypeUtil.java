@@ -28,6 +28,7 @@ import javax.baja.sys.BBoolean;
 import javax.baja.sys.BComplex;
 import javax.baja.sys.BComponent;
 import javax.baja.sys.BDouble;
+import javax.baja.sys.BDynamicEnum;
 import javax.baja.sys.BEnum;
 import javax.baja.sys.BEnumRange;
 import javax.baja.sys.BFacets;
@@ -233,46 +234,68 @@ public abstract class TypeUtil
             BEnumOverride cpx = (BEnumOverride) def;
             BFacets facets = comp.getAction(action.getName()).getFacets();
             if (facets.isNull()) throw new NullPointerException(
-                "comp " + comp + " does not have facets that are needed for action " + action.getName());
+                "comp " + comp + " does not have "
+                    + "facets that are needed for action " + action.getName());
             BEnumRange range;
             try {
                 range = (BEnumRange) facets.get(BFacets.RANGE);
             } catch (ClassCastException e) {
-                throw new ClassCastException("facets of comp " + comp + " must be of type " + BEnumRange.TYPE);
+                throw new ClassCastException("range facets of comp "
+                    + comp + " must be of type " + BEnumRange.TYPE);
             }
 
-            Iterator<Map.Entry<String, HVal>> it = args.iterator();
-            while (it.hasNext())
+            if (args.missing("value")) {
+                throw new IllegalArgumentException("action args must "
+                    + "have a non-null value for key='value'");
+            }
+            if (args.missing("duration")) {
+                throw new IllegalArgumentException("action args must "
+                    + "have a non-null value for key='duration'");
+            }
+
+            // construction of BDynamicEnum arg 'value'
+            BSimple value = toBajaSimple(args.get("value"));
+            if (value instanceof BString && range.isTag(value.toString()))
             {
-                Map.Entry<String, HVal> e = it.next();
-                BSimple value = toBajaSimple(e.getValue());
-                if (!e.getKey().equals("value"))
-                {
-                    cpx.set(e.getKey(), value);
-                    continue;
-                }
-                // construction of BDynamicEnum arg
-                if (value instanceof BString && range.isTag(value.toString()))
-                {
-                    value = range.get(value.toString());
-                }
-                else if (value instanceof BDouble && range.isOrdinal(((BDouble) value).getInt()))
-                {
-                    value = range.get(((BDouble) value).getInt());
-                }
-                else
-                {
-                    try {
-                        throw new IllegalStateException(
-                            "value: " + value.toString() +
-                                " is not ordinal nor tag of " + range.encodeToString());
-                    } catch (IOException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                }
-
-                cpx.set("value", value);
+                value = range.get(value.toString());
             }
+            else if (value instanceof BDouble && range.isOrdinal(((BDouble) value).getInt()))
+            {
+                value = range.get(((BDouble) value).getInt());
+            }
+            else
+            {
+                try {
+                    throw new IllegalStateException(
+                        "value: " + value.toString()
+                            + " is not ordinal nor tag of " + range.encodeToString());
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+            cpx.setValue((BDynamicEnum) value);
+
+            // construction of BRelTime arg 'duration'
+            BSimple duration = toBajaSimple(args.get("duration"));
+            if (!(duration instanceof BRelTime)) {
+                throw new IllegalStateException(
+                    "duration: " + duration.toString()
+                        + " is not a time value");
+            }
+            cpx.setDuration((BRelTime) duration);
+
+            // construction of optional BRelTime arg 'maxOverrideDuration'
+            if (args.has("maxOverrideDuration")) {
+                BSimple maxOverrideDuration = toBajaSimple(args.get("maxOverrideDuration"));
+                if (!(maxOverrideDuration instanceof BRelTime)) {
+                    throw new IllegalStateException(
+                        "maxOverrideDuration: " + maxOverrideDuration.toString()
+                            + " is not a time value");
+                }
+                cpx.setMaxOverrideDuration((BRelTime) maxOverrideDuration);
+            }
+
+            // other arguments are ignored
             return cpx;
         }
         // complex
