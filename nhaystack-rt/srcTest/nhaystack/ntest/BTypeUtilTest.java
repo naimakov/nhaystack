@@ -319,30 +319,6 @@ public class BTypeUtilTest extends BTestNg
     {
       Assert.assertEquals(e.getClass(), IllegalStateException.class);
     }
-
-
-    // resolved simple is different type to action parameter
-//    when(action.getParameterDefault()).thenReturn(BInteger.make(1));
-//    when(action.getParameterType()).thenReturn(BString.TYPE);
-//    try
-//    {
-//      val = TypeUtil.actionArgsToBaja(args, comp, action);
-//      Assert.fail();
-//    }
-//    catch(Exception e)
-//    {
-//      Assert.assertEquals(e.getClass(), IllegalStateException.class);
-//    }
-//
-//    // testing the retrieval of an enum from facets
-//    args = new HDictBuilder().add("test", HStr.make("normal")).toDict();
-//    BFacets facets = BFacets.makeEnum(BEnumRange.make(BAlarmState.TYPE));
-//    BEnumWritable enumw = mock(BEnumWritable.class);
-//    when(action.getParameterDefault()).thenReturn(BAlarmState.normal);
-//    when(action.getParameterType()).thenReturn(BAlarmState.TYPE);
-//    when(enumw.getFacets()).thenReturn(facets);
-//    BEnum enm = (BEnum) TypeUtil.actionArgsToBaja(args, enumw, action);
-//    Assert.assertEquals(enm.getOrdinal(), BAlarmState.NORMAL);
   }
 
   @Test(enabled = true)
